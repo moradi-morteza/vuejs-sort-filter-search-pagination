@@ -101,7 +101,7 @@
                 </thead>
                 <tbody>
                 <tr v-for="(student,index) in filteredItems">
-                    <td>{{index+1}}</td>
+                    <td>{{index+1+row_normalizer}}</td>
                     <td>{{student.name}}</td>
                     <td>{{student.family}}</td>
                     <td>{{student.base}}</td>
@@ -113,7 +113,7 @@
         </div>
 
         <div class="card-footer">
-            <pagination :records="itemCount" v-model="page" :per-page="10" @paginate="paginate"></pagination>
+            <pagination :records="itemCount" v-model="page" :per-page="count_per_page" @paginate="paginate"></pagination>
         </div>
 
     </div>
@@ -133,6 +133,8 @@
             page: 1,
             itemCount: 0,
             search: '',
+            row_normalizer: 0,
+            count_per_page: 10,
 
             base: 'All',
             class: 'All',
@@ -255,6 +257,8 @@
             },
 
             paginate: function(page) {
+                this.row_normalizer = (page-1)*this.count_per_page
+
             }
         },
         components: {
