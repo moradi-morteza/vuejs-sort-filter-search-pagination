@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-+0n0xVW2eSR5OomGNYDnhzAbDsOXxcvSN1TPprVMTNDbiYZCxYbOOl7+AMvyTG2x" crossorigin="anonymous">
+    <link rel="stylesheet" href="node_modules/@fortawesome/fontawesome-free/css/all.min.css">
+    <title>Vuejs Filter, Sort, Search and Pagination </title>
+
+    <style>
+
+        .sortable:hover{
+            cursor: pointer;
+            text-decoration: underline;
+            color: #209ce3;
+        }
+    </style>
+
+</head>
+<body>
+
+<div id="app" class="container p-4 ">
+
+    <div class="card shadow-sm">
+        <div class="card-footer">
+            <h5>{{title}}</h5>
+        </div>
+
+        <div class="card-body p-0">
+            <div class=" row p-3">
+                <div class="col-3">
+                    <label>Search</label>
+                    <input v-model="search" v-on:keyup="searchPaging" type="text" class="form-control" id="search" placeholder="Search ... ">
+                </div>
+                <div class="col-3">
+                    <label>Base</label>
+                    <select v-on:change="baseSelect" class="form-select form-select-sm" aria-label=".form-select-sm example">
+                        <option selected value="0">All</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                    </select>
+                </div>
+                <div class="col-3">
+                    <label>Class</label>
+                    <select  v-on:change="classSelect" class="form-select form-select-sm" aria-label=".form-select-sm example">
+                        <option selected value="0">All</option>
+                        <option value="1">A</option>
+                        <option value="2">B</option>
+                        <option value="3">C</option>
+                    </select>
+                </div>
+                <div class="col-3">
+                    <label>Status</label>
+                    <select  v-on:change="statusSelect" class="form-select form-select-sm" aria-label=".form-select-sm example">
+                        <option selected value="0">All</option>
+                        <option value="1">alpha</option>
+                        <option value="2">beta</option>
+                        <option value="3">gama</option>
+                    </select>
+                </div>
+            </div>
+            <table class="table table-sm table-striped">
+                <thead>
+                <tr>
+                    <th>Row</th>
+                    <th>
+                        <div class="sortable" data-status="up" v-on:click='sort("name","string",$event)'>
+                            <span class="fas fa-angle-up"></span>
+                            <span>Name</span>
+                        </div>
+                    </th>
+                    <th>
+                        <div class="sortable" data-status="up" v-on:click='sort("family","string",$event)'>
+                            <span class="fas fa-angle-up"></span>
+                            <span>Family</span>
+                        </div>
+                    </th>
+                    <th>
+                        <div class="sortable" data-status="up" v-on:click='sort("base","number",$event)'>
+                            <span class="fas fa-angle-up"></span>
+                            <span>Base</span>
+                        </div>
+                    </th>
+                    <th>
+                        <div class="sortable" data-status="up" v-on:click='sort("class","string",$event)'>
+                            <span class="fas fa-angle-up"></span>
+                            <span>Class</span>
+                        </div>
+                    </th>
+                    <th>
+                        <div class="sortable" data-status="up" v-on:click='sort("status","string",$event)'>
+                            <span class="fas fa-angle-up"></span>
+                            <span>status</span>
+                        </div>
+                    </th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr v-for="(student,index) in filteredItems">
+                    <td>{{index+1}}</td>
+                    <td>{{student.name}}</td>
+                    <td>{{student.family}}</td>
+                    <td>{{student.base}}</td>
+                    <td>{{student.class}}</td>
+                    <td>{{student.status}}</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card-footer">
+            <pagination :records="itemCount" v-model="page" :per-page="10" @paginate="paginate"></pagination>
+        </div>
+
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js" integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.min.js" integrity="sha384-Atwg2Pkwv9vp0ygtn1JAojH0nYbwNJLPhwyoVbhoPwBhjQPR5VtM2+xf0Uwh9KtT" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+<script src="node_modules/@fortawesome/fontawesome-free/js/all.min.js"></script>
+<script src="node_modules/vue-pagination-2/dist/vue-pagination-2.min.js"></script>
+<script>
+
+    let app = new Vue({
+        el: '#app',
+        data: {
+            page: 1,
+            itemCount: 0,
+            search: '',
+
+            base: 'All',
+            class: 'All',
+            status: 'All',
+            title: 'Vuejs Filter, Sort, Search and Pagination',
+            students: [
+
+                {"name": "Wade", "family": "mith", "base": 2, "class": "A", "status": "alpha"},
+                {"name": "Alison","family": "ohnson","base": 5,"class": "A","status": "alpha"},
+                {"name": "Seth", "family": "illiams", "base": 2, "class": "B", "status": "alpha"},
+                {"name": "Leona","family": "rown","base": 2,"class": "A","status": "beta"},
+                {"name": "Riley", "family": "ones", "base": 3, "class": "B", "status": "alpha"},
+                {"name": "Gilbert","family": "arcia","base": 1,"class": "B","status": "beta"},
+                {"name": "Jorge", "family": "iller", "base": 3, "class": "C", "status": "alpha"},
+                {"name": "Dan","family": "avis","base": 1,"class": "A","status": "beta"},
+                {"name": "Lucy", "family": "odriguez", "base": 1, "class": "C", "status": "gama"},
+                {"name": "Nicole","family": "Martinez","base": 1,"class": "A","status": "alpha"},
+                {"name": "Ramon", "family": "Hernandez", "base": 1, "class": "C", "status": "gama"},
+                {"name": "Miles","family": "Lopez","base": 1,"class": "C","status": "beta"},
+                {"name": "Liam", "family": "Gonzalez", "base": 3, "class": "A", "status": "alpha"},
+                {"name": "Nathaniel","family": "Wilson","base": 3,"class": "B","status": "gama"},
+                {"name": "Ethan", "family": "Anderson", "base": 2, "class": "A", "status": "alpha"},
+                {"name": "Lewis","family": "Thomas","base": 1,"class": "C","status": "gama"},
+                {"name": "Milton", "family": "Taylor", "base": 3, "class": "B", "status": "alpha"},
+                {"name": "Angela","family": "Moore","base": 3,"class": "A","status": "beta"},
+                {"name": "Joshua", "family": "Jackson", "base": 3, "class": "B", "status": "beta"},
+                {"name": "Mila","family": "Martin","base": 2,"class": "B","status": "alpha"},
+                {"name": "Harvey", "family": "Lee", "base": 3, "class": "B", "status": "alpha"},
+                {"name": "Gloria","family": "Perez","base": 1,"class": "B","status": "beta"},
+                {"name": "Antonio", "family": "Thompson", "base": 1, "class": "A", "status": "alpha"},
+                {"name": "Connor","family": "White","base": 1,"class": "C","status": "alpha"},
+                {"name": "Phoebe", "family": "Harris", "base": 1, "class": "C", "status": "alpha"},
+                {"name": "Aidan","family": "Sanchez","base": 1,"class": "C","status": "beta"},
+                {"name": "Katelynn", "family": "Clark", "base": 3, "class": "B", "status": "beta"},
+                {"name": "Conner","family": "Ramirez","base": 3,"class": "C","status": "gama"},
+                {"name": "Rose","family": "Lewis","base": 3,"class": "C","status": "gama"},
+                {"name": "Hunter","family": "Robinson","base": 3,"class": "C","status": "gama"}
+                ],
+        },
+        computed: {
+            filteredItems: function () {
+                let items = this.students.filter(student => {
+                    return (
+                        // search
+                        student.name.indexOf(this.search) > -1 ||
+                        student.family.indexOf(this.search) > -1 ||
+                        student.base.toString().indexOf(this.search) > -1 ||
+                        student.class.toLowerCase().indexOf(this.search.toLowerCase()) > -1 ||
+                        student.status.toLowerCase().indexOf(this.search.toLowerCase()) > -1)
+                        &&
+                        (( this.base === "All") ? true : student.base == this.base) &&
+                        ((this.class === "All") ? true : student.class.toLowerCase() === this.class.toLowerCase()) &&
+                        ((this.status === "All") ? true : student.status.toLowerCase() === this.status.toLowerCase());
+                });
+                let start =  (this.page - 1) * 10;
+                let end = this.page * 10;
+                this.itemCount = items.length;
+                return items.slice(start,end);
+            },
+        },
+        methods: {
+            searchPaging: function(){
+                this.page = 1;
+            },
+
+            baseSelect: function (event) {
+                this.base = event.target.options[event.target.selectedIndex].text;
+                this.page = 1;
+            },
+
+            classSelect: function (event) {
+                this.class = event.target.options[event.target.selectedIndex].text;
+                this.page = 1;
+            },
+
+            statusSelect: function (event) {
+                this.status = event.target.options[event.target.selectedIndex].text;
+                this.page = 1;
+            },
+
+            sort:function (property,type,event){
+
+                var status= event.currentTarget.getAttribute("data-status")
+
+                if (type=='string'){
+                    if (status=='up'){
+                        this.sortStringAsc(property);
+                        event.currentTarget.setAttribute("data-status","down")
+                        event.currentTarget.children[0].classList.add('fa-angle-down')
+                    }else{
+                        this.sortStringDesc(property);
+                        event.currentTarget.setAttribute("data-status","up")
+                        event.currentTarget.children[0].classList.add('fa-angle-up')
+                    }
+                }
+                if (type=='number'){
+                    if (status=='up'){
+                        this.sortNumberAsc(property)
+                        event.currentTarget.setAttribute("data-status","down")
+                        event.currentTarget.children[0].classList.add('fa-angle-down')
+                    }else{
+                        this.sortNumberDesc(property)
+                        event.currentTarget.setAttribute("data-status","up")
+                        event.currentTarget.children[0].classList.add('fa-angle-up')
+                    }
+                }
+            },
+
+            sortStringAsc: function (property) {
+                this.students.sort((a,b)=> a[property].localeCompare(b[property]))
+            },
+            sortStringDesc: function (property) {
+                this.students.sort((a,b)=> b[property].localeCompare(a[property]))
+            },
+            sortNumberAsc : function(property){
+                this.students.sort((a,b) => a[property] - b[property]);
+            },
+            sortNumberDesc : function(property){
+                this.students.sort((a,b) => b[property] - a[property]);
+            },
+
+            paginate: function(page) {
+            }
+        },
+        components: {
+            Pagination
+        },
+    })
+</script>
+</body>
+</html>
