@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" xmlns:v-on="http://www.w3.org/1999/xhtml" xmlns:v-bind="http://www.w3.org/1999/xhtml">
 <head>
     <!-- Required meta tags -->
     <meta charset="utf-8">
@@ -11,7 +11,6 @@
     <title>Vuejs Filter, Sort, Search and Pagination </title>
 
     <style>
-
         .sortable:hover{
             cursor: pointer;
             text-decoration: underline;
@@ -69,7 +68,7 @@
                     <th>Row</th>
                     <th>
                         <div class="sortable" data-status="up" v-on:click='sort("name","string",$event)'>
-                            <span class="fas fa-angle-up"></span>
+                            <span class="fa fa-angle-up"></span>
                             <span>Name</span>
                         </div>
                     </th>
@@ -97,16 +96,33 @@
                             <span>status</span>
                         </div>
                     </th>
+                    <th>
+                        <div class="sortable" data-status="up" v-on:click='sort(["country","name"],"string",$event)'>
+                            <span class="fas fa-angle-up"></span>
+                            <span>country</span>
+                        </div>
+                    </th>
+                    <th>
+                        <div class="sortable" data-status="up" v-on:click='sort(["country","population"],"number",$event)'>
+                            <span class="fas fa-angle-up"></span>
+                            <span>population</span>
+                        </div>
+                    </th>
                 </tr>
                 </thead>
                 <tbody>
                 <tr v-for="(student,index) in filteredItems">
-                    <td>{{index+1+row_normalizer}}</td>
+                    <td>
+                        <input type="checkbox" v-bind:id="student.id" class="form-check-input" v-on:change="rowSelect" v-bind:checked="multiCheck(student.id)">
+                        {{index+1+row_normalizer}}
+                    </td>
                     <td>{{student.name}}</td>
                     <td>{{student.family}}</td>
                     <td>{{student.base}}</td>
                     <td>{{student.class}}</td>
                     <td>{{student.status}}</td>
+                    <td>{{student.country.name}}</td>
+                    <td>{{student.country.population}}</td>
                 </tr>
                 </tbody>
             </table>
@@ -115,6 +131,7 @@
         <div class="card-footer">
             <pagination :records="itemCount" v-model="page" :per-page="count_per_page" @paginate="paginate"></pagination>
         </div>
+        <span>selected checkboxes id : {{selectedRow}}</span>
 
     </div>
 </div>
@@ -126,7 +143,6 @@
 <script src="node_modules/@fortawesome/fontawesome-free/js/all.min.js"></script>
 <script src="node_modules/vue-pagination-2/dist/vue-pagination-2.min.js"></script>
 <script>
-
     let app = new Vue({
         el: '#app',
         data: {
@@ -135,6 +151,7 @@
             search: '',
             row_normalizer: 0,
             count_per_page: 10,
+            selectedRow: [],
 
             base: 'All',
             class: 'All',
@@ -142,58 +159,68 @@
             title: 'Vuejs Filter, Sort, Search and Pagination',
             students: [
 
-                {"name": "Wade", "family": "mith", "base": 2, "class": "A", "status": "alpha"},
-                {"name": "Alison","family": "ohnson","base": 5,"class": "A","status": "alpha"},
-                {"name": "Seth", "family": "illiams", "base": 2, "class": "B", "status": "alpha"},
-                {"name": "Leona","family": "rown","base": 2,"class": "A","status": "beta"},
-                {"name": "Riley", "family": "ones", "base": 3, "class": "B", "status": "alpha"},
-                {"name": "Gilbert","family": "arcia","base": 1,"class": "B","status": "beta"},
-                {"name": "Jorge", "family": "iller", "base": 3, "class": "C", "status": "alpha"},
-                {"name": "Dan","family": "avis","base": 1,"class": "A","status": "beta"},
-                {"name": "Lucy", "family": "odriguez", "base": 1, "class": "C", "status": "gama"},
-                {"name": "Nicole","family": "Martinez","base": 1,"class": "A","status": "alpha"},
-                {"name": "Ramon", "family": "Hernandez", "base": 1, "class": "C", "status": "gama"},
-                {"name": "Miles","family": "Lopez","base": 1,"class": "C","status": "beta"},
-                {"name": "Liam", "family": "Gonzalez", "base": 3, "class": "A", "status": "alpha"},
-                {"name": "Nathaniel","family": "Wilson","base": 3,"class": "B","status": "gama"},
-                {"name": "Ethan", "family": "Anderson", "base": 2, "class": "A", "status": "alpha"},
-                {"name": "Lewis","family": "Thomas","base": 1,"class": "C","status": "gama"},
-                {"name": "Milton", "family": "Taylor", "base": 3, "class": "B", "status": "alpha"},
-                {"name": "Angela","family": "Moore","base": 3,"class": "A","status": "beta"},
-                {"name": "Joshua", "family": "Jackson", "base": 3, "class": "B", "status": "beta"},
-                {"name": "Mila","family": "Martin","base": 2,"class": "B","status": "alpha"},
-                {"name": "Harvey", "family": "Lee", "base": 3, "class": "B", "status": "alpha"},
-                {"name": "Gloria","family": "Perez","base": 1,"class": "B","status": "beta"},
-                {"name": "Antonio", "family": "Thompson", "base": 1, "class": "A", "status": "alpha"},
-                {"name": "Connor","family": "White","base": 1,"class": "C","status": "alpha"},
-                {"name": "Phoebe", "family": "Harris", "base": 1, "class": "C", "status": "alpha"},
-                {"name": "Aidan","family": "Sanchez","base": 1,"class": "C","status": "beta"},
-                {"name": "Katelynn", "family": "Clark", "base": 3, "class": "B", "status": "beta"},
-                {"name": "Conner","family": "Ramirez","base": 3,"class": "C","status": "gama"},
-                {"name": "Rose","family": "Lewis","base": 3,"class": "C","status": "gama"},
-                {"name": "Hunter","family": "Robinson","base": 3,"class": "C","status": "gama"}
+                {"id": 1,"name": null, "family": null, "base": null, "class": null, "status": null, country: {name:null, population: null}},
+                {"id": 2,"name": null, "family": null, "base": null, "class": null, "status": null, country: {name:null, population: null}},
+                {"id": 3,"name": null, "family": "jamez", "base": null, "class": null, "status": null, country: {name:null, population: null}},
+                {"id": 4,"name": null, "family": "bernard", "base": null, "class": null, "status": null, country: {name:null, population: null}},
+                {"id": 5,"name": "Alison", "family": null, "base": null, "class": null, "status": null, country: {name:null, population: null}},
+                {"id": 6,"name": "alibard", "family": null, "base": null, "class": null, "status": null, country: {name:null, population: null}},
+                {"id": 7,"name": "Riley", "family": "", "base": 0, "class": "", "status": "", country: {name:"", population: 0}},
+                {"id": 8,"name": "مرتضی","family": "مرادی","base": 1,"class": "ب","status": "برحال", country: {name:"قم", population: 870000}},
+                {"id": 9,"name": "Lucy", "family": "odriguez", "base": 1, "class": "C", "status": "gama", country: {name:"porteghal", population: 100}},
+                {"id": 10,"name": "Nicole","family": "Martinez","base": 1,"class": "A","status": "alpha", country: {name:"gerpo", population: 80000000}},
+                {"id": 11,"name": "Ramon", "family": "Hernandez", "base": 1, "class": "C", "status": "gama", country: {name:"azarbayjan", population: 80000000}},
+                {"id": 12,"name": "Miles","family": "Lopez","base": 1,"class": "C","status": "beta", country: {name:"afghanistan", population: 70000000}},
+                {"id": 13,"name": "Liam", "family": "Gonzalez", "base": 3, "class": "A", "status": "alpha", country: {name:"iran", population: 70000000}},
+                {"id": 14,"name": "Nathaniel","family": "Wilson","base": 3,"class": "B","status": "gama", country: {name:"mekzik", population: 70000000}},
+                {"id": 15,"name": "Ethan", "family": "Anderson", "base": 2, "class": "A", "status": "alpha", country: {name:"qom", population: 60000000}},
+                {"id": 16,"name": "Lewis","family": "Thomas","base": 1,"class": "C","status": "gama", country: {name:"afghanistan", population: 66000000}},
+                {"id": 17,"name": "Milton", "family": "Taylor", "base": 3, "class": "B", "status": "alpha", country: {name:"bafghanistan", population: 67000000}},
+                {"id": 18,"name": "Angela","family": "Moore","base": 3,"class": "A","status": "beta", country: {name:"cafghanistan", population: 9000000}},
+                {"id": 19,"name": "Joshua", "family": "Jackson", "base": 3, "class": "B", "status": "beta", country: {name:"dafghanistan", population: 50000000}},
+                {"id": 20,"name": "Mila","family": "Martin","base": 2,"class": "B","status": "alpha", country: {name:"dfghanistan", population: 40000000}},
+                {"id": 21,"name": "Harvey", "family": "Lee", "base": 3, "class": "B", "status": "alpha", country: {name:"efghanistan", population: 30000000}},
+                {"id": 22,"name": "Gloria","family": "Perez","base": 1,"class": "B","status": "beta", country: {name:"ffghanistan", population: 20000000}},
+                {"id": 23,"name": "Antonio", "family": "Thompson", "base": 1, "class": "A", "status": "alpha", country: {name:"gafghanistan", population: 10000000}},
+                {"id": 24,"name": "Connor","family": "White","base": 1,"class": "C","status": "alpha", country: {name:"hafghanistan", population: 90000000}},
+                {"id": 25,"name": "Phoebe", "family": "Harris", "base": 1, "class": "C", "status": "alpha", country: {name:"iafghanistan", population: 90000000}},
+                {"id": 26,"name": "Aidan","family": "Sanchez","base": 1,"class": "C","status": "beta", country: {name:"jafghanistan", population: 70000000}},
+                {"id": 27,"name": "Katelynn", "family": "Clark", "base": 3, "class": "B", "status": "beta", country: {name:"kafghanistan", population: 60000000}},
+                {"id": 28,"name": "Conner","family": "Ramirez","base": 3,"class": "C","status": "gama", country: {name:"kafghanistan", population: 50000000}},
+                {"id": 29,"name": "Rose","family": "Lewis","base": 3,"class": "C","status": "gama", country: {name:"mafghanistan", population: 40000000}},
+                {"id": 30,"name": "Hunter","family": "Robinson","base": 3,"class": "C","status": "gama", country: {name:"nafghanistan", population: 30000000}}
                 ],
         },
         computed: {
             filteredItems: function () {
                 let items = this.students.filter(student => {
+                    // console.log( student.base.indexOf(this.search) > -1);
                     return (
                         // search
-                        student.name.indexOf(this.search) > -1 ||
-                        student.family.indexOf(this.search) > -1 ||
-                        student.base.toString().indexOf(this.search) > -1 ||
-                        student.class.toLowerCase().indexOf(this.search.toLowerCase()) > -1 ||
-                        student.status.toLowerCase().indexOf(this.search.toLowerCase()) > -1)
-                        &&
-                        (( this.base === "All") ? true : student.base == this.base) &&
-                        ((this.class === "All") ? true : student.class.toLowerCase() === this.class.toLowerCase()) &&
-                        ((this.status === "All") ? true : student.status.toLowerCase() === this.status.toLowerCase());
+                        // student.name.indexOf(this.search) > -1 ||
+                        (( student.name === null) ? false : (student.name.toLowerCase().indexOf(this.search.toLowerCase()) > -1)) ||
+                        // student.family.indexOf(this.search) > -1 ||
+                        (( student.family === null) ? false : (student.family.toLowerCase().indexOf(this.search.toLowerCase()) > -1)) ||
+                        // student.base.toString().indexOf(this.search) > -1 ||
+                        (( student.base === null) ? false : (student.base.toString().toLowerCase().indexOf(this.search.toLowerCase()) > -1)) ||
+                        // student.class.toLowerCase().indexOf(this.search.toLowerCase()) > -1 ||
+                        (( student.class === null) ? false : (student.class.toLowerCase().indexOf(this.search.toLowerCase()) > -1)) ||
+                        // student.status.toLowerCase().indexOf(this.search.toLowerCase()) > -1 ||
+                        (( student.status === null) ? false : (student.status.toLowerCase().indexOf(this.search.toLowerCase()) > -1)) ||
+                        // student.country.name.toLowerCase().indexOf(this.search.toLowerCase()) > -1 ||
+                        (( student.country === null || student.country.name === null) ? false : (student.country.name.toLowerCase().indexOf(this.search.toLowerCase()) > -1)) ||
+                        // student.country.population.toString().indexOf(this.search.toLowerCase()) > -1) &&
+                        (( student.country === null || student.country.population === null) ? false : (student.country.population.toString().toLowerCase().indexOf(this.search.toLowerCase()) > -1)) )&&
+                        (( this.base === "All" ) ? true : student.base == this.base) &&
+                        (( this.class === "All" ) ? true : (( student.class === null) ? false :  student.class.toLowerCase() === this.class.toLowerCase())) &&
+                        (( this.status === "All" ) ? true : (( student.status === null) ? false :  student.status.toLowerCase() === this.status.toLowerCase()));
                 });
                 let start =  (this.page - 1) * 10;
                 let end = this.page * 10;
                 this.itemCount = items.length;
                 return items.slice(start,end);
             },
+
         },
         methods: {
             searchPaging: function(){
@@ -215,8 +242,26 @@
                 this.page = 1;
             },
 
-            sort:function (property,type,event){
+            rowSelect: function(event){
+                if(event.target.checked){
+                    this.selectedRow.push(event.target.id);
+                }
+                else{
+                    this.selectedRow = this.arrayRemove(this.selectedRow,event.target.id);
+                }
+            },
 
+            multiCheck: function (id){
+                return this.selectedRow.includes(id.toString());
+            },
+
+            arrayRemove: function (arr, value) {
+                return arr.filter(function(ele){
+                    return ele != value;
+                });
+            },
+
+            sort: function (property,type,event){
                 var status= event.currentTarget.getAttribute("data-status")
 
                 if (type=='string'){
@@ -244,16 +289,38 @@
             },
 
             sortStringAsc: function (property) {
-                this.students.sort((a,b)=> a[property].localeCompare(b[property]))
+                console.log("sortStringAsc");
+                this.students.sort((a,b)=> {
+                    if(typeof a[property[0]] == 'object')
+                        return (a[property[0]][property[1]] == null) ? -1 : ((b[property[0]][property[1]] == null) ? 1 : a[property[0]][property[1]].localeCompare(b[property[0]][property[1]]));
+                    else
+                        return (a[property] == null) ? -1 :  ((b[property] == null) ? 1 : a[property].localeCompare(b[property]));
+                })
             },
             sortStringDesc: function (property) {
-                this.students.sort((a,b)=> b[property].localeCompare(a[property]))
+                console.log("sortStringDesc");
+                this.students.sort((a,b)=> {
+                    if(typeof a[property[0]] == 'object')
+                        return (b[property[0]][property[1]] == null) ? -1 :  ((a[property[0]][property[1]] == null) ? 1 : b[property[0]][property[1]].localeCompare(a[property[0]][property[1]]));
+                    else
+                        return  (b[property] == null) ? -1 :  ((a[property] == null) ? 1 : b[property].localeCompare(a[property]));
+                })
             },
             sortNumberAsc : function(property){
-                this.students.sort((a,b) => a[property] - b[property]);
+                this.students.sort((a,b) => {
+                    if(typeof a[property[0]] == 'object')
+                        return (a[property[0]][property[1]] == null) ? -1 : ((b[property[0]][property[1]] == null) ? 1 : a[property[0]][property[1]] - b[property[0]][property[1]]);
+                    else
+                        return (a[property] == null) ? -1 :  ((b[property] == null) ? 1 : a[property] - b[property]);
+                });
             },
             sortNumberDesc : function(property){
-                this.students.sort((a,b) => b[property] - a[property]);
+                this.students.sort((a,b) => {
+                    if(typeof a[property[0]] == 'object')
+                        return  (b[property[0]][property[1]] == null) ? -1 :  ((a[property[0]][property[1]] == null) ? 1 : b[property[0]][property[1]] - a[property[0]][property[1]]);
+                    else
+                        return (b[property] == null) ? -1 :  ((a[property] == null) ? 1 : b[property] - a[property]);
+                });
             },
 
             paginate: function(page) {
